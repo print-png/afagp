@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Frutiger Aero Clicker – Photo2.png</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body, html {
+  margin: 0;
+  height: 100%;
+  font-family: 'Montserrat', sans-serif;
+  background: url('background.jpg') center center / cover no-repeat fixed;
+  overflow: hidden;
+  color: #fff;
+}
+
+/* --- Магазин --- */
+.shop-menu {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(10px);
+  padding: 1rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-weight: 400;
+  z-index: 2;
+  min-width: 200px;
+}
+
+.shop-menu h2 { margin: 0 0 1rem 0; font-size: 1.2rem; text-align:center; font-weight:700; }
+
+.shop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shop-item button {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: linear-gradient(90deg,#a6d1e6,#ffc3a0);
+  color: #fff;
+  transition: 0.2s;
+  font-weight: 400;
+}
+
+.shop-item button:hover:not(:disabled) { transform: scale(1.05); box-shadow:0 0 15px rgba(255,255,255,0.6);}
+.shop-item button:disabled { opacity:0.5; cursor:not-allowed;}
+
+.price { display:flex; align-items:center; gap:4px; font-weight:700; color:#ffe600; }
+.price svg { width:16px; height:16px; fill:#ffe600; }
+
+/* --- Центральный кликер --- */
+.clicker-container { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; }
+.photo-block { position: relative; width: 300px; max-width:90vw; height:auto; cursor:pointer; display:flex; justify-content:center; align-items:center; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.photo-block img { width:100%; height:auto; display:block; }
+.photo-block.glow { box-shadow:0 12px 50px rgba(0,0,0,0.5); }
+
+/* --- Нижнее меню --- */
+.bottom-menu {
+  position:absolute; bottom:40px; left:50%; transform:translateX(-50%);
+  padding:1rem 2rem; background: rgba(255,255,255,0.25); backdrop-filter:blur(10px);
+  box-shadow:0 -10px 30px rgba(0,0,0,0.4); display:flex; gap:2rem; align-items:center; font-weight:400; font-size:1.2rem; border-radius:15px; z-index:2;
+}
+.music-btn {
+  cursor:pointer; background:rgba(255,255,255,0.2); border:none; border-radius:12px;
+  padding:0.4rem 1rem; font-size:1rem; font-weight:600; color:#fff; transition:0.2s;
+}
+.music-btn:hover { transform:scale(1.05); box-shadow:0 0 10px #fff; }
+
+/* +1 анимация */
+.plus-one { position:absolute; color:#ffe600; font-weight:700; font-size:1.2rem; animation:floatUp 0.8s ease-out forwards;}
+@keyframes floatUp {0%{transform:translateY(0) scale(1);opacity:1;}100%{transform:translateY(-50px) scale(1.3);opacity:0;}}
+
+/* Частицы */
+.particle { position:absolute; width:6px; height:6px; border-radius:50%; pointer-events:none; animation:particleMove 0.8s forwards; }
+@keyframes particleMove {0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--x),var(--y)) scale(0.5);opacity:0;}}
+</style>
+</head>
+<body>
+
+<div class="shop-menu">
+  <h2>чудо из афганистана</h2>
+  <div class="shop-item">
+    <button data-cost="50" data-type="bonus">+1 афган при клике
+      <span class="price"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>50</span>
+    </button>
+  </div>
+  <div class="shop-item">
+    <button data-cost="120" data-type="autoclick">афган вам будет тыкать
+      <span class="price"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>120</span>
+    </button>
+  </div>
+  <div class="shop-item">
+    <button data-cost="300" data-type="changephoto">у меня пиксель 6
+      <span class="price"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>300</span>
+    </button>
+  </div>
+</div>
+
+<div class="clicker-container">
+  <div class="photo-block">
+    <img id="rotating-photo" src="photo1.jpg" alt="Photo" />
+  </div>
+</div>
+
+<div class="bottom-menu">
+  афганы: <span id="click-count">0</span>
+  <button class="music-btn" id="music-btn">шедевральный трек</button>
+  <audio id="bg-music" loop>
+    <source src="music.m4a" type="audio/mp4">
+  </audio>
+  <audio id="click-sound">
+    <source src="click.mp3" type="audio/mpeg">
+  </audio>
+</div>
+
+<script>
+let count = 0;
+let clickMultiplier = 1;
+const clickCountEl = document.getElementById('click-count');
+const photoBlock = document.querySelector('.photo-block');
+const shopButtons = document.querySelectorAll('.shop-item button');
+const rotatingPhoto = document.getElementById('rotating-photo');
+
+// музыка
+const musicBtn = document.getElementById('music-btn');
+const bgMusic = document.getElementById('bg-music');
+let musicPlaying = false;
+musicBtn.addEventListener('click', ()=>{
+  if(musicPlaying){ bgMusic.pause(); musicBtn.textContent='шедевральный трек'; }
+  else{ bgMusic.play(); musicBtn.textContent='шедевральный трек'; }
+  musicPlaying=!musicPlaying;
+});
+
+// звук клика
+const clickSound = document.getElementById('click-sound');
+
+function updateShopButtons(){
+  shopButtons.forEach(btn => { btn.disabled = count < parseInt(btn.dataset.cost); });
+}
+
+function createParticles(x,y){
+  for(let i=0;i<8;i++){
+    const particle=document.createElement('div');
+    particle.className='particle';
+    particle.style.background=`hsl(${Math.random()*60+180},80%,60%)`;
+    const dx=(Math.random()-0.5)*100+'px';
+    const dy=(Math.random()-0.5)*100+'px';
+    particle.style.setProperty('--x',dx);
+    particle.style.setProperty('--y',dy);
+    particle.style.left=`${x}px`;
+    particle.style.top=`${y}px`;
+    photoBlock.appendChild(particle);
+    setTimeout(()=>particle.remove(),800);
+  }
+}
+
+photoBlock.addEventListener('click', e=>{
+  clickSound.currentTime = 0;
+  clickSound.play();
+
+  count += clickMultiplier;
+  clickCountEl.textContent = count;
+  updateShopButtons();
+
+  const rect = photoBlock.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const plus = document.createElement('span');
+  plus.textContent = `+${clickMultiplier}`;
+  plus.className = 'plus-one';
+  plus.style.left = `${x}px`;
+  plus.style.top = `${y}px`;
+  photoBlock.appendChild(plus);
+  setTimeout(() => plus.remove(), 800);
+
+  photoBlock.classList.add('glow');
+  photoBlock.style.transform = 'scale(1.05)';
+  setTimeout(() => { photoBlock.classList.remove('glow'); photoBlock.style.transform = 'scale(1)'; }, 200);
+
+  createParticles(x, y);
+});
+
+shopButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const cost=parseInt(btn.dataset.cost);
+    const type=btn.dataset.type;
+    if(count>=cost){
+      count-=cost;
+      clickCountEl.textContent=count;
+
+      if(type==='bonus'){ clickMultiplier++; }
+      else if(type==='autoclick'){
+        if(!btn.dataset.active){
+          btn.dataset.active=true;
+          setInterval(()=>{
+            count+=clickMultiplier;
+            clickCountEl.textContent=count;
+            updateShopButtons();
+            const plus=document.createElement('span');
+            plus.textContent=`+${clickMultiplier}`;
+            plus.className='plus-one';
+            plus.style.left='150px';
+            plus.style.top='75px';
+            photoBlock.appendChild(plus);
+            setTimeout(()=>plus.remove(),800);
+          },2000);
+        }
+      }else if(type==='changephoto'){
+        rotatingPhoto.src='photo2.png';
+        photoBlock.style.boxShadow='0 12px 50px rgba(0,0,0,0.5)';
+      }
+
+      updateShopButtons();
+      alert(`афган вам прислал: ${btn.textContent.trim()}`);
+    }
+  });
+});
+
+updateShopButtons();
+</script>
+
+</body>
+</html>
